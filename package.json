@@ -1,0 +1,28 @@
+{
+  "name": "phonebook-backend",
+  "version": "1.0.0",
+  "description": "A backend server for a simple note taking react app\r Used for learning purposes.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajashekar435/phonebook-backend.git"
+  },
+  "author": "Raja Shekar",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rajashekar435/phonebook-backend/issues"
+  },
+  "homepage": "https://github.com/rajashekar435/phonebook-backend#readme",
+  "dependencies": {
+    "express": "^4.18.1",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
+  }
+}
