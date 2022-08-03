@@ -66,13 +66,13 @@ app.post('/api/persons',(req,res) =>{
     }
 
     if(!body.name || !body.number){
-        return res.json({
+        return res.status(400).json({
             error: "Name or number is missing"
         })
     }
 
     if(persons.find(person => person.name.toLowerCase() === body.name.toLowerCase()) !== undefined){
-        return res.json({
+        return res.status(400).json({
             error: "Name already exists. It must be unique"
         })
     }
@@ -102,7 +102,7 @@ app.delete('/api/persons/:id',(req,res)=>{
 
 
 
-const PORT = 3001;
+const PORT = process.env.port || 3001;
 
 app.listen(PORT, ()=>{
     console.log(`App started on port ${PORT}`);
