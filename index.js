@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const morgan = require('morgan');
 const app = express();
-const Person = require('./models/note');
+const Person = require('./models/person');
 
 morgan.token('body', function (req, res) { return JSON.stringify(req.body) })
 app.use(express.static('build'));
@@ -50,14 +50,8 @@ app.get('/info',(request,response)=>{
     
 });
 
-app.post('/api/persons',(request,response) =>{
+app.post('/api/persons',(request,response,next) =>{
     const body = request.body;
-
-    if(!body.name || !body.number){
-        return response.status(400).json({
-            error: "Name or number is missing"
-        })
-    }
 
     Person.find({
         'name': {'$regex': `^${body.name}$`,$options:'i'}
@@ -79,11 +73,9 @@ app.post('/api/persons',(request,response) =>{
                     .then(returnedPerson =>{
                         response.json(returnedPerson);
                     })
-                    .catch(err =>{
-                        response.status(500).end();
-                    })
+                    .catch(error => next(error));
         }    
-    });
+    }).catch(error => next(error));
 })
 
 app.delete('/api/persons/:id',(request,response,next)=>{
@@ -104,17 +96,11 @@ app.delete('/api/persons/:id',(request,response,next)=>{
 app.put('/api/persons/:id',(request,response,next) =>{
     const body = request.body;
 
-    if(!body.name || !body.number){
-        return response.status(400).json({
-            error: "Name or number is missing"
-        })
-    }
-
     const person = {
         name : body.name,
         number : body.number
     };
-    Person.findByIdAndUpdate(request.params.id, person, {new : true})
+    Person.findByIdAndUpdate(request.params.id, person, {new : true, runValidators: true, context: 'query'})
             .then( updatedPerson =>{
                 if(updatedPerson)
                     response.json(updatedPerson);
@@ -137,7 +123,9 @@ const errorHandler = (error, request, response, next) =>{
     if (error.name === 'CastError') {
         return response.status(400).send({ error: 'Malformatted id' })
     } 
-
+    else if(error.name === 'ValidationError'){
+        return response.status(400).send({error: error.message});
+    }
     next(error);
 }
 
