@@ -1,6 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const morgan = require('morgan');
 const app = express();
+const Person = require('./models/note');
 
 morgan.token('body', function (req, res) { return JSON.stringify(req.body) })
 app.use(express.static('build'));
@@ -36,35 +38,50 @@ app.get('/',(req,res) =>{
 
 
 app.get('/api/persons',(req,res)=>{
-    res.json(persons);
+    Person.find({}).then(result => {
+        res.json(result);
+    })
 })
 
 
 app.get('/api/persons/:id',(req,res)=>{
-    const id = Number(req.params.id);
-    const person = persons.find(p => p.id === id);
-    if(person){
-        res.json(person);
-    }
-    else{
+
+    const tempName = `^micheal$`;
+    Person.find({
+        'name': {'$regex': tempName,$options:'i'}
+    }).then(result => {
+        console.log(result.length);
+    });
+    Person.findById(req.params.id).then(person =>{
+        if(person)
+            res.json(person);
+        else
         res.status(404).end();
-    }
-})
+    })
+    .catch( () => {
+        res.status(500).end();
+    });     
+});
 
 
-app.get('/info',(req,res)=>{(req.get('Server-Timing'));
-    res.send(`
-        <p>Phonebook has info for ${persons.length} people</p>
-        <p>${new Date()}</p>
-    `);
-})
+app.get('/info',(req,res)=>{
+    Person.find({}).count( (err,count) =>{
+        if(err){
+            console.log()
+        }
+        else{
+            return res.send(`
+                <p>Phonebook has info for ${count} people</p>
+                <p>${new Date()}</p>
+            `);
+        }
+        
+    });
+    
+});
 
 app.post('/api/persons',(req,res) =>{
     const body = req.body;
-
-    const generateId = ()=>{
-        return Math.floor(Math.random() * 10e9);
-    }
 
     if(!body.name || !body.number){
         return res.status(400).json({
@@ -72,19 +89,31 @@ app.post('/api/persons',(req,res) =>{
         })
     }
 
-    if(persons.find(person => person.name.toLowerCase() === body.name.toLowerCase()) !== undefined){
-        return res.status(400).json({
-            error: "Name already exists. It must be unique"
-        })
-    }
-    const person = {
-        id: generateId(),
-        name: body.name,
-        number: body.number
-    }
-
-    persons = persons.concat(person);
-    res.json(person);
+    Person.find({
+        'name': {'$regex': `^${body.name}$`,$options:'i'}
+    }).then(result => {
+        console.log(result);
+        if(result.length != 0){
+            return res.status(400).json({
+                error: "Name already exists. Add a unique name"
+            });
+        }
+        else{
+            const person = new Person({
+                name: body.name,
+                number: body.number
+            })
+        
+            person
+                    .save()
+                    .then(returnedPerson =>{
+                        res.json(returnedPerson);
+                    })
+                    .catch(err =>{
+                        res.status(500).end();
+                    })
+        }    
+    });
 })
 
 app.delete('/api/persons/:id',(req,res)=>{
